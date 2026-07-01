@@ -469,8 +469,26 @@ with tab3:
         with st.form("edit_form"):
             e_date = st.text_input("日付(YYYY/MM/DD)", value=current_data['日付'])
 
-            if current_data['種別']=='振替':
-                e_acc = st.text_input("アカウント(振替：出金元→入金先)", value = current_data['アカウント'])
+            if current_data['種別'] == '振替':
+                all_accs = st.session_state.df['アカウント'].dropna().unique().tolist()
+                valid_accs = [acc for acc in all_accs if " → " not in acc]
+                current_acc_str = str(current_data['アカウント'])
+                if " → " in current_data:
+                    curr_f, curr_t = current_acc_str.split(" → ")
+                else:
+                    curr_f, curr_t = valid_accs[0], valid_accs[1]
+                if curr_f not in valid_accs:
+                    valid_accs.insert(0,curr_f)
+                if curr_t not in valid_accs:
+                    valid_accs.insert(0, curr_t)
+
+                e_acc_f = st.selectbox("出金元", valid_accs, index=valid_accs.index(curr_f))
+                e_acc_t = st.selectbox("入金先", valid_accs, index=valid_accs.index(curr_t))
+                if e_acc_f != e_acc_t:
+                    e_acc = f"{e_acc_f} → {e_acc_t}"
+                else:
+                    st.warning("出金元と入金先が同じです。異なるアカウントにしてください。")
+                    e_acc = current_acc_str
             else:
                 acc_opts = list(st.session_state.accounts_init.keys())
                 if current_data['アカウント'] not in acc_opts:
